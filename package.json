@@ -1,0 +1,25 @@
+{
+  "name": "rspack-vue-starter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "",
+  "author": "",
+  "license": "ISC",
+  "keywords": [],
+  "main": "index.js",
+  "scripts": {
+    "dev": "rspack serve",
+    "build": "rspack build",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "dependencies": {
+    "vue": "3.2.45"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^0.40.0",
+    "@rspack/cli": "latest",
+    "eslint": "^8.46.0",
+    "vue-loader": "^17.2.2"
+  }
+}
