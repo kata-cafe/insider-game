@@ -17,6 +17,9 @@ const config = {
       __VUE_PROD_DEVTOOLS__: false,
     },
   },
+  devServer: {
+    historyApiFallback: true,
+  },
   plugins: [new VueLoaderPlugin()],
   module: {
     rules: [
@@ -30,6 +33,23 @@ const config = {
       {
         test: /\.svg/,
         type: 'asset/resource',
+      },
+      {
+        test: /\.css$/,
+        use: [
+          {
+            loader: 'postcss-loader',
+            options: {
+              postcssOptions: {
+                plugins: {
+                  tailwindcss: {},
+                  autoprefixer: {},
+                },
+              },
+            },
+          },
+        ],
+        type: 'css',
       },
     ],
   },
