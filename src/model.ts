@@ -9,4 +9,5 @@ export interface GamePlayer {
   peer: string
   playerName: string
   isRoomLeader: boolean
+  isReady: boolean
 }

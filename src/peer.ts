@@ -18,7 +18,12 @@ export const myPeer = new Peer(gameId.value)
 
 export function createGame() {
   isRoomLeader.value = true
-  players.value = [{ peer: myPeer.id, playerName: playerName.value, isRoomLeader: true }]
+  players.value = [{
+    peer: myPeer.id,
+    playerName: playerName.value,
+    isRoomLeader: true,
+    isReady: false,
+  }]
 }
 
 export function connect(peerId: string) {
@@ -37,12 +42,24 @@ export function connect(peerId: string) {
   })
 }
 
-export function quitGame() {
+export function toggleReady() {
+  const mapReadyPlayers = players.value.map(
+    player => player.peer === myPeer.id
+      ? ({ ...player, isReady: true })
+      : player,
+  )
+
+  players.value = mapReadyPlayers
+
   broadcastPeers({
     type: 'changePlayers',
-    playerName: playerName.value,
-    players: players.value.filter(player => player.peer !== myPeer.id),
+    players: mapReadyPlayers,
   })
+}
+
+export function quitGame() {
+  players.value = []
+  peerConn.value.close()
 }
 
 myPeer.on('connection', (conn) => {
@@ -57,6 +74,7 @@ myPeer.on('connection', (conn) => {
         peer: conn.peer,
         playerName: peerData.playerName,
         isRoomLeader: false,
+        isReady: false,
       })
 
       broadcastPeers({ type: 'changePlayers', players: players.value }, true)
@@ -71,6 +89,19 @@ myPeer.on('connection', (conn) => {
   conn.on('open', () => {
     // eslint-disable-next-line no-console
     console.log('open !!')
+  })
+
+  conn.on('close', () => {
+    const filterClosePlayers = players.value.filter(player => player.peer !== conn.peer)
+    players.value = filterClosePlayers
+
+    broadcastPeers(
+      {
+        type: 'changePlayers',
+        players: filterClosePlayers,
+      },
+      true,
+    )
   })
 })
 
@@ -88,7 +119,10 @@ function sendGameDataToPeer(peer: DataConnection['peer'], data: GameSendingData)
   const newPeer = myPeer.connect(peer)
 
   newPeer.on('open', () => {
-    newPeer.send(data)
+    newPeer.send({
+      ...data,
+      playerName: data.playerName || playerName.value,
+    })
   })
 }
 
