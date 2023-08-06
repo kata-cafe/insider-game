@@ -1,8 +1,12 @@
 import type { DataConnection } from 'peerjs'
 import Peer from 'peerjs'
 import { ref } from 'vue'
+import useGame from './useGame'
+import type { GameConnection } from './model'
 
 const gameId = ref(makeid(4).toUpperCase())
+
+const { playerName } = useGame()
 
 export const peerConn = ref<DataConnection>()
 
@@ -18,7 +22,11 @@ export function connect(peerId: string) {
   peerConn.value = myPeer.connect(peerId)
 
   peerConn.value.on('open', () => {
-    peerConn.value.send('hi!')
+    sendGameData(peerConn.value, {
+      type: 'join',
+      playerName: playerName.value,
+      message: 'Hi!',
+    })
   })
 }
 
@@ -32,6 +40,10 @@ myPeer.on('connection', (conn) => {
     console.log('open !!')
   })
 })
+
+function sendGameData(conn: DataConnection, data: GameConnection) {
+  conn.send(data)
+}
 
 function makeid(length: number) {
   let result = ''

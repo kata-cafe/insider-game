@@ -2,10 +2,15 @@
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { connect, createGame } from '../peer'
+import useGame from '../useGame'
 
 const router = useRouter()
 
+const { playerName } = useGame()
+
 const roomId = ref('')
+
+const newName = ref('')
 
 watch(roomId, () => roomId.value = roomId.value.toUpperCase())
 
@@ -21,17 +26,31 @@ function handleCreateGame() {
 </script>
 
 <template>
-  <div class="text-4xl font-bold text-primary">
+  <div class="text-6xl font-bold text-primary">
     INSIDER
   </div>
 
-  <input v-model="roomId" type="text" placeholder="Type Your Room ID" class="input input-bordered w-full max-w-xs text-center" maxlength="4">
+  <template v-if="playerName">
+    <div class="flex items-end gap-4 text-4xl ">
+      <span>Hello,</span>
+      <span class="cursor-pointer underline transition-colors hover:text-primary" @click="playerName = ''">{{ playerName }}</span>
+    </div>
 
-  <button class="btn btn-primary mt-4 w-full max-w-xs" @click="handleJoinRoom">
-    join game
-  </button>
+    <input v-model="roomId" type="text" placeholder="Type Your Room ID" class="input input-bordered w-full max-w-xs text-center" maxlength="4">
 
-  <button class="btn btn-primary btn-outline w-full max-w-xs" @click="handleCreateGame">
-    create game
-  </button>
+    <button class="btn btn-primary mt-4 w-full max-w-xs" @click="handleJoinRoom">
+      join game
+    </button>
+
+    <button class="btn btn-primary btn-outline w-full max-w-xs" @click="handleCreateGame">
+      create game
+    </button>
+  </template>
+
+  <form v-else @submit="playerName = newName">
+    <input v-model="newName" type="text" placeholder="Type Your Name" class="input input-bordered w-full max-w-xs text-center">
+    <button class="btn btn-primary mt-4 w-full max-w-xs" type="submit">
+      enter
+    </button>
+  </form>
 </template>
