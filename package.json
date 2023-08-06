@@ -14,6 +14,7 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
+    "peerjs": "^1.4.7",
     "vue": "3.2.45"
   },
   "devDependencies": {
