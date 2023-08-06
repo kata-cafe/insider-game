@@ -1,20 +1,22 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import BaseButton from '../components/BaseButton.vue'
-import { isRoomLeader, myPeer, peerConn, players, quitGame, toggleReady } from '../peer'
+import { gameStatus, isRoomLeader, myPeer, peerConn, players, quitGame, startGame, toggleReady } from '../peer'
 
 const router = useRouter()
 
-router.beforeResolve(() => {
-  if (!isRoomLeader.value && !peerConn.value)
-    router.push({ name: 'home' })
+watch(gameStatus, () => {
+  if (gameStatus.value === 'gameStart')
+    router.push({ name: 'in-game' })
 })
 
 const arePlayersExceedMinimum = computed(() => players.value.length >= 4)
 
 const canStartGame = computed(
-  () => arePlayersExceedMinimum.value && players.value.every(player => player.isRoomLeader || player.isReady),
+  () => arePlayersExceedMinimum.value && players.value.every(
+    player => player.isRoomLeader || player.isReady,
+  ),
 )
 
 const startGameButtonText = computed(() => {
@@ -53,7 +55,7 @@ function handleQuit() {
     </div>
   </div>
 
-  <BaseButton v-if="isRoomLeader" :disabled="!canStartGame" class="mt-4">
+  <BaseButton v-if="isRoomLeader" :disabled="!canStartGame" class="mt-4" @click="startGame">
     {{ startGameButtonText }}
   </BaseButton>
 

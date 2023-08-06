@@ -1,6 +1,6 @@
 import type { DataConnection } from 'peerjs'
 import Peer from 'peerjs'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import useGame from './useGame'
 import type { GamePlayer, GameSendingData } from './model'
 
@@ -12,9 +12,15 @@ export const players = ref<GamePlayer[]>([])
 
 export const peerConn = ref<DataConnection>()
 
+export const gameStatus = ref<'gameStart' | null>(null)
+
 export const isRoomLeader = ref(false)
 
 export const myPeer = new Peer(gameId.value)
+
+const myPlayerData = computed(() => players.value.find(player => player.peer === myPeer.id))
+
+export const myRole = computed(() => myPlayerData.value.role)
 
 export function createGame() {
   isRoomLeader.value = true
@@ -57,6 +63,34 @@ export function toggleReady() {
   })
 }
 
+export function startGame() {
+  const roomLeader = players.value.find(player => player.isRoomLeader)
+  const normalPlayers = players.value.filter(player => !player.isRoomLeader)
+  const insiderIndex = Math.round(
+    Math.random() * (normalPlayers.length - 1),
+  )
+
+  const mapPlayersRole: GamePlayer[] = [
+    { ...roomLeader, role: 'leader' },
+    ...normalPlayers.map<GamePlayer>(
+      (player, index) => ({ ...player, role: index === insiderIndex ? 'insider' : 'villager' }),
+    ),
+  ]
+
+  players.value = mapPlayersRole
+
+  broadcastPeers({
+    type: 'startGame',
+  })
+
+  broadcastPeers({
+    type: 'changePlayers',
+    players: mapPlayersRole,
+  })
+
+  gameStatus.value = 'gameStart'
+}
+
 export function quitGame() {
   players.value = []
   peerConn.value.close()
@@ -83,6 +117,9 @@ myPeer.on('connection', (conn) => {
       // eslint-disable-next-line no-console
       console.log('changePlayers')
       players.value = [...peerData.players]
+    }
+    else if (peerData.type === 'startGame') {
+      gameStatus.value = 'gameStart'
     }
   })
 
