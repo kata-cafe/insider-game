@@ -1,5 +1,5 @@
-export interface GameConnection {
-  type: 'join' | 'newJoin'
+export interface GameSendingData {
+  type: 'changePlayers' | 'newJoin'
   playerName?: string
   message?: string | number
   players?: GamePlayer[]
