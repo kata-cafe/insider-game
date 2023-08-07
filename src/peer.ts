@@ -3,6 +3,7 @@ import Peer from 'peerjs'
 import { computed, ref } from 'vue'
 import useGame from './useGame'
 import type { GamePlayer, GameSendingData } from './model'
+import { thAnswers } from './answer/th'
 
 const gameId = ref(makeid(4).toUpperCase())
 
@@ -13,6 +14,8 @@ export const players = ref<GamePlayer[]>([])
 export const peerConn = ref<DataConnection>()
 
 export const gameStatus = ref<'gameStart' | null>(null)
+
+export const gameAnswer = ref('')
 
 export const isRoomLeader = ref(false)
 
@@ -34,7 +37,7 @@ export function createGame() {
 
 export function connect(peerId: string) {
   if (peerConn.value) {
-    players.value = []
+    resetGameData()
     peerConn.value.close()
   }
 
@@ -88,11 +91,22 @@ export function startGame() {
     players: mapPlayersRole,
   })
 
+  const insiderPeer = normalPlayers[insiderIndex].peer
+
+  const answer = thAnswers[Math.round(Math.random() * (thAnswers.length - 1))]
+
+  gameAnswer.value = answer
+
+  sendGameDataToPeer(insiderPeer, {
+    type: 'giveAnswer',
+    message: answer,
+  })
+
   gameStatus.value = 'gameStart'
 }
 
 export function quitGame() {
-  players.value = []
+  resetGameData()
   peerConn.value.close()
 }
 
@@ -121,6 +135,9 @@ myPeer.on('connection', (conn) => {
     else if (peerData.type === 'startGame') {
       gameStatus.value = 'gameStart'
     }
+    else if (peerData.type === 'giveAnswer') {
+      gameAnswer.value = peerData.message.toString()
+    }
   })
 
   conn.on('open', () => {
@@ -141,6 +158,11 @@ myPeer.on('connection', (conn) => {
     )
   })
 })
+
+function resetGameData() {
+  players.value = []
+  gameAnswer.value = ''
+}
 
 function broadcastPeers(data: GameSendingData, excludeRoomLeader = false) {
   players.value

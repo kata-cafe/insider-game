@@ -1,13 +1,23 @@
 <script setup lang="ts">
-import { myRole } from '../peer'
+import { gameAnswer, myRole } from '../peer'
 </script>
 
 <template>
-  <div class="text-4xl font-bold">
+  <div class="text-4xl">
+    <span v-if="myRole === 'leader'" class="font-bold">
+      Tell Your Friends,
+    </span>
     You are
   </div>
   <div class="text-4xl font-bold uppercase text-primary">
     {{ myRole }}
+  </div>
+
+  <div
+    v-if="gameAnswer"
+    class="mt-4 w-full max-w-xs rounded-xl bg-primary p-4 text-center text-4xl text-white"
+  >
+    {{ gameAnswer }}
   </div>
 
   <div class="flex flex-col pt-4">
