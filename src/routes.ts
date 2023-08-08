@@ -1,6 +1,6 @@
 import type { RouteRecordRaw } from 'vue-router'
 import Home from './pages/Home.vue'
-import { isRoomLeader, peerConn } from './peer'
+import { isRoomLeader, peerConn } from './store'
 
 function peerConnGuard() {
   if (!isRoomLeader.value && !peerConn.value)

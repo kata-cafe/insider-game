@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { connect, createGame } from '../peer'
+import { connect, createGame } from '../store'
 import useGame from '../useGame'
 
 const router = useRouter()

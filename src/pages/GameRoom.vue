@@ -2,7 +2,7 @@
 import { useRouter } from 'vue-router'
 import { computed, watch } from 'vue'
 import BaseButton from '../components/BaseButton.vue'
-import { gameStatus, isRoomLeader, myPeer, peerConn, players, quitGame, startGame, toggleReady } from '../peer'
+import { gameStatus, isRoomLeader, myPeer, peerConn, players, quitGame, startGame, toggleReady } from '../store'
 
 const router = useRouter()
 
