@@ -55,7 +55,7 @@ function handleQuit() {
     </div>
   </div>
 
-  <BaseButton v-if="isRoomLeader" class="mt-4" @click="startGame">
+  <BaseButton v-if="isRoomLeader" class="mt-4" :disabled="!canStartGame" @click="startGame">
     {{ startGameButtonText }}
   </BaseButton>
 
