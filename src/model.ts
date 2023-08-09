@@ -1,9 +1,10 @@
 export interface GameSendingData {
-  type: 'changePlayers' | 'newJoin' | 'startGame' | 'giveAnswer' | 'voteInsiderPhase' | 'submitVoteInsider'
+  type: 'changePlayers' | 'newJoin' | 'startGame' | 'giveAnswer' | 'voteInsiderPhase' | 'submitVoteInsider' | 'gameResultPhase'
   playerName?: string
   message?: string | number
   players?: GamePlayer[]
   player?: GamePlayer
+  gameResult?: GameResult
 }
 
 export interface GamePlayer {
@@ -18,4 +19,6 @@ export interface GamePlayer {
 
 export type GamePlayerRole = 'insider' | 'villager' | 'leader'
 
-export type GameStatus = 'gameStart' | 'voteInsiderPhase' | null
+export type GameStatus = 'gameStart' | 'voteInsiderPhase' | 'gameResultPhase' | null
+
+export type GameResult = 'win' | 'lose' | 'tie'

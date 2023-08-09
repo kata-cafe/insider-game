@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import BaseButton from '../components/BaseButton.vue'
 import BasePlayerListItem from '../components/BasePlayerListItem.vue'
-import { myRole, players, submitVotePlayer } from '../store'
+import { gameStatus, isMyRoleLeader, players, submitResultGame, submitVotePlayer } from '../store'
 import type { GamePlayer } from '../model'
+
+const router = useRouter()
 
 const votingPlayers = computed(() => players.value.filter(player => player.role !== 'leader'))
 
 const allPlayersVoted = computed(() => votingPlayers.value.every(player => player.isVoted))
 
 const selectedPlayer = ref<GamePlayer>()
-
-const isLeader = ref(myRole.value === 'leader')
 
 const isSubmittedVotePlayer = ref(false)
 
@@ -22,12 +23,16 @@ function handleSubmitVotePlayer() {
   submitVotePlayer(selectedPlayer.value)
 }
 
-if (isLeader.value) {
+if (isMyRoleLeader.value) {
   watch(allPlayersVoted, () => {
-    // eslint-disable-next-line no-console
-    console.log('all players is voted')
+    submitResultGame()
   })
 }
+
+watch(gameStatus, () => {
+  if (gameStatus.value === 'gameResultPhase')
+    router.push({ name: 'game-result' })
+})
 </script>
 
 <template>
@@ -51,13 +56,13 @@ if (isLeader.value) {
     :player="player"
   >
     <template #append>
-      <BaseButton v-if="!isLeader" class="btn-sm" :disabled="isSubmittedVotePlayer" @click="selectedPlayer = player">
+      <BaseButton v-if="!isMyRoleLeader" class="btn-sm" :disabled="isSubmittedVotePlayer" @click="selectedPlayer = player">
         Vote
       </BaseButton>
     </template>
   </BasePlayerListItem>
 
-  <BaseButton v-if="!isLeader" :disabled="disabledSubmit" @click="handleSubmitVotePlayer">
+  <BaseButton v-if="!isMyRoleLeader" :disabled="disabledSubmit" @click="handleSubmitVotePlayer">
     {{ isSubmittedVotePlayer ? 'Waiting Other Players' : 'Submit' }}
   </BaseButton>
 </template>

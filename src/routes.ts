@@ -31,4 +31,10 @@ export const routes: Readonly<RouteRecordRaw[]> = [
     beforeEnter: [peerConnGuard],
     component: () => import('./pages/VoteRoom.vue'),
   },
+  {
+    path: '/game-result',
+    name: 'game-result',
+    beforeEnter: [peerConnGuard],
+    component: () => import('./pages/GameResult.vue'),
+  },
 ]
