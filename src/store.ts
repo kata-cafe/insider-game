@@ -2,7 +2,7 @@ import type { DataConnection } from 'peerjs'
 import Peer from 'peerjs'
 import { computed, ref } from 'vue'
 import useGame from './useGame'
-import type { GamePlayer, GameSendingData } from './model'
+import type { GamePlayer, GameSendingData, GameStatus } from './model'
 import { thAnswers } from './answer/th'
 
 const gameId = ref(makeid(4).toUpperCase())
@@ -11,9 +11,9 @@ const { playerName } = useGame()
 
 export const players = ref<GamePlayer[]>([])
 
-export const peerConn = ref<DataConnection>()
+export const roomLeaderConn = ref<DataConnection>()
 
-export const gameStatus = ref<'gameStart' | null>(null)
+export const gameStatus = ref<GameStatus>(null)
 
 export const gameAnswer = ref('')
 
@@ -32,19 +32,20 @@ export function createGame() {
     playerName: playerName.value,
     isRoomLeader: true,
     isReady: false,
+    isVoted: false,
   }]
 }
 
 export function connect(peerId: string) {
-  if (peerConn.value) {
+  if (roomLeaderConn.value) {
     resetGameData()
-    peerConn.value.close()
+    roomLeaderConn.value.close()
   }
 
-  peerConn.value = myPeer.connect(peerId)
+  roomLeaderConn.value = myPeer.connect(peerId)
 
-  peerConn.value.on('open', () => {
-    sendGameData(peerConn.value, {
+  roomLeaderConn.value.on('open', () => {
+    sendGameData(roomLeaderConn.value, {
       type: 'newJoin',
       playerName: playerName.value,
     })
@@ -105,9 +106,21 @@ export function startGame() {
   gameStatus.value = 'gameStart'
 }
 
+export function finishGame() {
+  gameStatus.value = 'voteInsiderPhase'
+  broadcastPeers({
+    type: 'voteInsiderPhase',
+  })
+}
+
+export function submitVotePlayer(votePlayer: GamePlayer) {
+  const leaderPeer = players.value.find(player => player.role === 'leader').peer
+  sendGameDataToPeer(leaderPeer, { type: 'submitVoteInsider', player: votePlayer })
+}
+
 export function quitGame() {
   resetGameData()
-  peerConn.value.close()
+  roomLeaderConn.value.close()
 }
 
 myPeer.on('connection', (conn) => {
@@ -123,6 +136,7 @@ myPeer.on('connection', (conn) => {
         playerName: peerData.playerName,
         isRoomLeader: false,
         isReady: false,
+        isVoted: false,
       })
 
       broadcastPeers({ type: 'changePlayers', players: players.value }, true)
@@ -137,6 +151,36 @@ myPeer.on('connection', (conn) => {
     }
     else if (peerData.type === 'giveAnswer') {
       gameAnswer.value = peerData.message.toString()
+    }
+    else if (peerData.type === 'voteInsiderPhase') {
+      gameStatus.value = 'voteInsiderPhase'
+    }
+    else if (peerData.type === 'submitVoteInsider') {
+      const playerIndex = players.value.findIndex(player => player.peer === peerData.player.peer)
+
+      if (players.value[playerIndex].votingPlayers) {
+        players.value[playerIndex].votingPlayers.push(
+          {
+            peer: peerData.player.peer,
+            playerName: peerData.player.playerName,
+          },
+        )
+      }
+
+      else {
+        players.value[playerIndex].votingPlayers = [
+          {
+            peer: peerData.player.peer,
+            playerName: peerData.player.playerName,
+          },
+        ]
+      }
+
+      const submitPlayerIndex = players.value.findIndex(
+        player => player.peer === conn.peer,
+      )
+
+      players.value[submitPlayerIndex].isVoted = true
     }
   })
 

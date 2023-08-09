@@ -1,9 +1,9 @@
 import type { RouteRecordRaw } from 'vue-router'
 import Home from './pages/Home.vue'
-import { isRoomLeader, peerConn } from './store'
+import { isRoomLeader, roomLeaderConn } from './store'
 
 function peerConnGuard() {
-  if (!isRoomLeader.value && !peerConn.value)
+  if (!isRoomLeader.value && !roomLeaderConn.value)
     return { name: 'home' }
 }
 
@@ -24,5 +24,11 @@ export const routes: Readonly<RouteRecordRaw[]> = [
     name: 'in-game',
     beforeEnter: [peerConnGuard],
     component: () => import('./pages/InGame.vue'),
+  },
+  {
+    path: '/vote-room',
+    name: 'vote-room',
+    beforeEnter: [peerConnGuard],
+    component: () => import('./pages/VoteRoom.vue'),
   },
 ]

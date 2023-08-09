@@ -2,7 +2,7 @@
 import { useRouter } from 'vue-router'
 import { computed, watch } from 'vue'
 import BaseButton from '../components/BaseButton.vue'
-import { gameStatus, isRoomLeader, myPeer, peerConn, players, quitGame, startGame, toggleReady } from '../store'
+import { gameStatus, isRoomLeader, myPeer, players, quitGame, roomLeaderConn, startGame, toggleReady } from '../store'
 
 const router = useRouter()
 
@@ -40,7 +40,7 @@ function handleQuit() {
     Game Room
   </div>
   <div class="text-4xl font-bold">
-    {{ isRoomLeader ? myPeer.id : peerConn.peer }}
+    {{ isRoomLeader ? myPeer.id : roomLeaderConn.peer }}
   </div>
 
   <div v-for="player of players" :key="player.peer" class="flex w-full max-w-xs items-center gap-4">
@@ -55,7 +55,7 @@ function handleQuit() {
     </div>
   </div>
 
-  <BaseButton v-if="isRoomLeader" :disabled="!canStartGame" class="mt-4" @click="startGame">
+  <BaseButton v-if="isRoomLeader" class="mt-4" @click="startGame">
     {{ startGameButtonText }}
   </BaseButton>
 

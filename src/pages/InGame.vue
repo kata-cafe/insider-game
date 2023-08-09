@@ -1,5 +1,15 @@
 <script setup lang="ts">
-import { gameAnswer, myRole } from '../store'
+import { watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { finishGame, gameAnswer, gameStatus, myRole } from '../store'
+import BaseButton from '../components/BaseButton.vue'
+
+const router = useRouter()
+
+watch(gameStatus, () => {
+  if (gameStatus.value === 'voteInsiderPhase')
+    router.push({ name: 'vote-room' })
+})
 </script>
 
 <template>
@@ -15,7 +25,7 @@ import { gameAnswer, myRole } from '../store'
 
   <div
     v-if="gameAnswer"
-    class="mt-4 w-full max-w-xs rounded-xl bg-primary p-4 text-center text-4xl text-white"
+    class="mt-4 w-full max-w-xs rounded-xl border-2 border-dashed border-primary p-4 text-center text-4xl text-white"
   >
     {{ gameAnswer }}
   </div>
@@ -50,4 +60,8 @@ import { gameAnswer, myRole } from '../store'
       </div>
     </template>
   </div>
+
+  <BaseButton v-if="myRole === 'leader'" @click="finishGame">
+    Correct !!
+  </BaseButton>
 </template>
