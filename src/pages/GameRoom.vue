@@ -2,7 +2,7 @@
 import { useRouter } from 'vue-router'
 import { computed, watch } from 'vue'
 import BaseButton from '../components/BaseButton.vue'
-import { gameStatus, isRoomLeader, myPeer, players, quitGame, roomLeaderConn, startGame, toggleReady } from '../store'
+import { gameStatus, isRoomLeader, myPeer, myPlayerIndex, players, quitGame, roomLeaderConn, sendDataToRoomLeader, startGame } from '../store'
 
 const router = useRouter()
 
@@ -28,6 +28,14 @@ const startGameButtonText = computed(() => {
 
   return 'Start Game'
 })
+
+function handleReady() {
+  const newIsReadyValue = !players.value[myPlayerIndex.value].isReady
+
+  players.value[myPlayerIndex.value].isReady = newIsReadyValue
+
+  sendDataToRoomLeader({ type: 'playerReady', message: newIsReadyValue })
+}
 
 function handleQuit() {
   quitGame()
@@ -59,7 +67,7 @@ function handleQuit() {
     {{ startGameButtonText }}
   </BaseButton>
 
-  <BaseButton v-else class="mt-4" @click="toggleReady">
+  <BaseButton v-else class="mt-4" @click="handleReady">
     Ready
   </BaseButton>
 

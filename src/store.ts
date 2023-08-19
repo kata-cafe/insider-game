@@ -25,6 +25,8 @@ export const myPeer = new Peer(gameId.value)
 
 const myPlayerData = computed(() => players.value.find(player => player.peer === myPeer.id))
 
+export const myPlayerIndex = computed(() => findPlayerIndexByPeer(players.value, myPeer.id))
+
 export const myRole = computed(() => myPlayerData.value?.role)
 
 export const isMyRoleLeader = computed(() => myRole.value === 'leader')
@@ -59,21 +61,6 @@ export function connect(peerId: string) {
       type: 'newJoin',
       playerName: playerName.value,
     })
-  })
-}
-
-export function toggleReady() {
-  const mapReadyPlayers = players.value.map(
-    player => player.peer === myPeer.id
-      ? ({ ...player, isReady: true })
-      : player,
-  )
-
-  players.value = mapReadyPlayers
-
-  broadcastPeers({
-    type: 'changePlayers',
-    players: mapReadyPlayers,
   })
 }
 
@@ -184,7 +171,12 @@ myPeer.on('connection', (conn) => {
         isVoted: false,
       })
 
-      broadcastPeers({ type: 'changePlayers', players: players.value }, true)
+      broadcastPeers({ type: 'changePlayers', players: players.value })
+    }
+    if (peerData.type === 'playerReady') {
+      const playerIndex = findPlayerIndexByPeer(players.value, conn.peer)
+      players.value[playerIndex].isReady = !!peerData.message
+      broadcastPeers({ type: 'changePlayers', players: players.value }, [conn.peer])
     }
     else if (peerData.type === 'changePlayers') {
       // eslint-disable-next-line no-console
@@ -247,7 +239,6 @@ myPeer.on('connection', (conn) => {
         type: 'changePlayers',
         players: filterClosePlayers,
       },
-      true,
     )
   })
 })
@@ -264,10 +255,14 @@ function broadcastVillagers(data: GameSendingData) {
   villagerPlayers.value.forEach(player => sendGameDataToPeer(player.peer, data))
 }
 
-function broadcastPeers(data: GameSendingData, excludeRoomLeader = false) {
+function broadcastPeers(data: GameSendingData, excludePeers: string[] = []) {
   players.value
-    .filter(player => !excludeRoomLeader || !player.isRoomLeader)
+    .filter(player => excludePeers.length === 0 || !excludePeers.includes(player.peer))
     .forEach(player => sendGameDataToPeer(player.peer, data))
+}
+
+export function sendDataToRoomLeader(data: GameSendingData) {
+  sendGameDataToPeer(roomLeaderConn.value.peer, data)
 }
 
 function sendGameData(conn: DataConnection, data: GameSendingData) {
@@ -283,6 +278,10 @@ function sendGameDataToPeer(peer: DataConnection['peer'], data: GameSendingData)
       playerName: data.playerName || playerName.value,
     })
   })
+}
+
+export function findPlayerIndexByPeer(players: GamePlayer[], peer: string) {
+  return players.findIndex(player => player.peer === peer)
 }
 
 function makeid(length: number) {
