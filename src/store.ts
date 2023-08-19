@@ -19,11 +19,11 @@ export const gameAnswer = ref('')
 
 export const gameResult = ref<GameResult>()
 
-export const isRoomLeader = ref(false)
-
 export const myPeer = new Peer(gameId.value)
 
 const myPlayerData = computed(() => players.value.find(player => player.peer === myPeer.id))
+
+export const isRoomLeader = computed(() => myPlayerData.value && myPlayerData.value.isRoomLeader)
 
 export const myPlayerIndex = computed(() => findPlayerIndexByPeer(players.value, myPeer.id))
 
@@ -38,7 +38,6 @@ export const winnerSide = ref<'insider' | 'villager' | 'tie'>()
 const villagerPlayers = computed(() => players.value.filter(player => player.role === 'villager'))
 
 export function createGame() {
-  isRoomLeader.value = true
   players.value = [{
     peer: myPeer.id,
     playerName: playerName.value,
@@ -247,7 +246,6 @@ function resetGameData() {
   players.value = []
   gameAnswer.value = ''
   gameStatus.value = null
-  isRoomLeader.value = false
   gameResult.value = undefined
 }
 
