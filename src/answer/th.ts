@@ -64,4 +64,5 @@ export const thAnswers = [
   'ลิปสติก',
   'ยาดม',
   'กีต้าร์',
+  'Figma',
 ]
