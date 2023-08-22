@@ -65,4 +65,5 @@ export const thAnswers = [
   'ยาดม',
   'กีต้าร์',
   'Figma',
+  'Excel',
 ]
