@@ -55,12 +55,12 @@ export function connect(peerId: string) {
 
   roomLeaderConn.value = myPeer.connect(peerId)
 
-  roomLeaderConn.value.on('open', () => {
-    sendGameData(roomLeaderConn.value, {
+  sendDataToRoomLeader(
+    {
       type: 'newJoin',
       playerName: playerName.value,
-    })
-  })
+    },
+  )
 }
 
 export function startGame() {
@@ -261,10 +261,6 @@ function broadcastPeers(data: GameSendingData, excludePeers: string[] = []) {
 
 export function sendDataToRoomLeader(data: GameSendingData) {
   sendGameDataToPeer(roomLeaderConn.value.peer, data)
-}
-
-function sendGameData(conn: DataConnection, data: GameSendingData) {
-  conn.send(data)
 }
 
 function sendGameDataToPeer(peer: DataConnection['peer'], data: GameSendingData) {
