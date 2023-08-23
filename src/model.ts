@@ -1,5 +1,14 @@
 export interface GameSendingData {
-  type: 'changePlayers' | 'playerReady' | 'newJoin' | 'startGame' | 'giveAnswer' | 'voteInsiderPhase' | 'submitVoteInsider' | 'gameResultPhase'
+  type:
+  | 'changePlayers'
+  | 'changeVotingPlayers'
+  | 'playerReady'
+  | 'newJoin'
+  | 'startGame'
+  | 'giveAnswer'
+  | 'voteInsiderPhase'
+  | 'submitVoteInsider'
+  | 'gameResultPhase'
   playerName?: string
   message?: string | number | boolean
   players?: GamePlayer[]

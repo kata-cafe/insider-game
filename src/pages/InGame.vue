@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { broadcastPeers, gameAnswer, gameStatus, myRole } from '../store'
+import { broadcastPeers, gameAnswer, gameStatus, myRole, players, votingPlayers } from '../store'
 import BaseButton from '../components/BaseButton.vue'
 
 const router = useRouter()
@@ -16,6 +16,15 @@ function finishGame() {
 
   broadcastPeers({
     type: 'voteInsiderPhase',
+  })
+
+  const filterLeaderPlayers = players.value.filter(player => player.role !== 'leader')
+
+  votingPlayers.value = filterLeaderPlayers
+
+  broadcastPeers({
+    type: 'changeVotingPlayers',
+    players: filterLeaderPlayers,
   })
 }
 </script>

@@ -3,12 +3,10 @@ import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import BaseButton from '../components/BaseButton.vue'
 import BasePlayerListItem from '../components/BasePlayerListItem.vue'
-import { gameStatus, isMyRoleLeader, players, submitResultGame, submitVotePlayer } from '../store'
+import { gameStatus, isMyRoleLeader, submitResultGame, submitVotePlayer, votingPlayers } from '../store'
 import type { GamePlayer } from '../model'
 
 const router = useRouter()
-
-const votingPlayers = computed(() => players.value.filter(player => player.role !== 'leader'))
 
 const allPlayersVoted = computed(() => votingPlayers.value.every(player => player.isVoted))
 

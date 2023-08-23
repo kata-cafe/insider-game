@@ -10,6 +10,8 @@ const { playerName } = useGame()
 
 export const players = ref<GamePlayer[]>([])
 
+export const votingPlayers = ref<GamePlayer[]>([])
+
 export const roomLeaderConn = ref<DataConnection>()
 
 export const gameStatus = ref<GameStatus>(null)
@@ -135,6 +137,9 @@ myPeer.on('connection', (conn) => {
       console.log('changePlayers')
       players.value = [...peerData.players]
     }
+    else if (peerData.type === 'changeVotingPlayers') {
+      votingPlayers.value = [...peerData.players]
+    }
     else if (peerData.type === 'startGame') {
       gameStatus.value = 'gameStart'
     }
@@ -197,6 +202,7 @@ myPeer.on('connection', (conn) => {
 
 function resetGameData() {
   players.value = []
+  votingPlayers.value = []
   gameAnswer.value = ''
   gameStatus.value = null
   gameResult.value = undefined
