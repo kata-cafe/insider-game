@@ -110,8 +110,8 @@ export function submitResultGame() {
 }
 
 export function quitGame() {
-  resetGameData()
   roomLeaderConn.value.close()
+  resetGameData()
 }
 
 myPeer.on('connection', (conn) => {
