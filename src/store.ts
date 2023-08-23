@@ -3,7 +3,6 @@ import Peer from 'peerjs'
 import { computed, ref } from 'vue'
 import useGame from './useGame'
 import type { GamePlayer, GameResult, GameSendingData, GameStatus } from './model'
-import { thAnswers } from './answer/th'
 
 const gameId = ref(makeid(4).toUpperCase())
 
@@ -61,45 +60,6 @@ export function connect(peerId: string) {
       playerName: playerName.value,
     },
   )
-}
-
-export function startGame() {
-  const roomLeader = players.value.find(player => player.isRoomLeader)
-  const normalPlayers = players.value.filter(player => !player.isRoomLeader)
-  const insiderIndex = Math.round(
-    Math.random() * (normalPlayers.length - 1),
-  )
-
-  const mapPlayersRole: GamePlayer[] = [
-    { ...roomLeader, role: 'leader' },
-    ...normalPlayers.map<GamePlayer>(
-      (player, index) => ({ ...player, role: index === insiderIndex ? 'insider' : 'villager' }),
-    ),
-  ]
-
-  players.value = mapPlayersRole
-
-  broadcastPeers({
-    type: 'startGame',
-  })
-
-  broadcastPeers({
-    type: 'changePlayers',
-    players: mapPlayersRole,
-  })
-
-  const insiderPeer = normalPlayers[insiderIndex].peer
-
-  const answer = thAnswers[Math.round(Math.random() * (thAnswers.length - 1))]
-
-  gameAnswer.value = answer
-
-  sendGameDataToPeer(insiderPeer, {
-    type: 'giveAnswer',
-    message: answer,
-  })
-
-  gameStatus.value = 'gameStart'
 }
 
 export function finishGame() {
@@ -253,7 +213,7 @@ function broadcastVillagers(data: GameSendingData) {
   villagerPlayers.value.forEach(player => sendGameDataToPeer(player.peer, data))
 }
 
-function broadcastPeers(data: GameSendingData, excludePeers: string[] = []) {
+export function broadcastPeers(data: GameSendingData, excludePeers: string[] = []) {
   players.value
     .filter(player => excludePeers.length === 0 || !excludePeers.includes(player.peer))
     .forEach(player => sendGameDataToPeer(player.peer, data))
@@ -263,7 +223,7 @@ export function sendDataToRoomLeader(data: GameSendingData) {
   sendGameDataToPeer(roomLeaderConn.value.peer, data)
 }
 
-function sendGameDataToPeer(peer: DataConnection['peer'], data: GameSendingData) {
+export function sendGameDataToPeer(peer: DataConnection['peer'], data: GameSendingData) {
   const newPeer = myPeer.connect(peer)
 
   newPeer.on('open', () => {

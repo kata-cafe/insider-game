@@ -2,7 +2,9 @@
 import { useRouter } from 'vue-router'
 import { computed, watch } from 'vue'
 import BaseButton from '../components/BaseButton.vue'
-import { gameStatus, isRoomLeader, myPeer, myPlayerIndex, players, quitGame, roomLeaderConn, sendDataToRoomLeader, startGame } from '../store'
+import { broadcastPeers, gameAnswer, gameStatus, isRoomLeader, myPeer, myPlayerIndex, players, quitGame, roomLeaderConn, sendDataToRoomLeader, sendGameDataToPeer } from '../store'
+import { thAnswers } from '../answer/th'
+import type { GamePlayer } from '../model'
 
 const router = useRouter()
 
@@ -40,6 +42,45 @@ function handleReady() {
 function handleQuit() {
   quitGame()
   router.push({ name: 'home' })
+}
+
+function startGame() {
+  const roomLeader = players.value.find(player => player.isRoomLeader)
+  const normalPlayers = players.value.filter(player => !player.isRoomLeader)
+  const insiderIndex = Math.round(
+    Math.random() * (normalPlayers.length - 1),
+  )
+
+  const mapPlayersRole: GamePlayer[] = [
+    { ...roomLeader, role: 'leader' },
+    ...normalPlayers.map<GamePlayer>(
+      (player, index) => ({ ...player, role: index === insiderIndex ? 'insider' : 'villager' }),
+    ),
+  ]
+
+  players.value = mapPlayersRole
+
+  broadcastPeers({
+    type: 'startGame',
+  })
+
+  broadcastPeers({
+    type: 'changePlayers',
+    players: mapPlayersRole,
+  })
+
+  const insiderPeer = normalPlayers[insiderIndex].peer
+
+  const answer = thAnswers[Math.round(Math.random() * (thAnswers.length - 1))]
+
+  gameAnswer.value = answer
+
+  gameStatus.value = 'gameStart'
+
+  sendGameDataToPeer(insiderPeer, {
+    type: 'giveAnswer',
+    message: answer,
+  })
 }
 </script>
 
