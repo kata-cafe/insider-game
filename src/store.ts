@@ -62,13 +62,6 @@ export function connect(peerId: string) {
   )
 }
 
-export function finishGame() {
-  gameStatus.value = 'voteInsiderPhase'
-  broadcastPeers({
-    type: 'voteInsiderPhase',
-  })
-}
-
 export function submitVotePlayer(votePlayer: GamePlayer) {
   const leaderPeer = players.value.find(player => player.role === 'leader').peer
   sendGameDataToPeer(leaderPeer, { type: 'submitVoteInsider', player: votePlayer })

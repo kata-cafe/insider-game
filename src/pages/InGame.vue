@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { finishGame, gameAnswer, gameStatus, myRole } from '../store'
+import { broadcastPeers, gameAnswer, gameStatus, myRole } from '../store'
 import BaseButton from '../components/BaseButton.vue'
 
 const router = useRouter()
@@ -10,6 +10,14 @@ watch(gameStatus, () => {
   if (gameStatus.value === 'voteInsiderPhase')
     router.push({ name: 'vote-room' })
 })
+
+function finishGame() {
+  gameStatus.value = 'voteInsiderPhase'
+
+  broadcastPeers({
+    type: 'voteInsiderPhase',
+  })
+}
 </script>
 
 <template>
