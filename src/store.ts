@@ -36,8 +36,6 @@ export const insiderPlayer = computed(() => players.value.find(player => player.
 
 export const winnerSide = ref<'insider' | 'villager' | 'tie'>()
 
-const villagerPlayers = computed(() => players.value.filter(player => player.role === 'villager'))
-
 export function createGame() {
   players.value = [{
     peer: myPeer.id,
@@ -62,46 +60,6 @@ export function connect(peerId: string) {
       playerName: playerName.value,
     },
   )
-}
-
-export function submitVotePlayer(votePlayer: GamePlayer) {
-  const leaderPeer = players.value.find(player => player.role === 'leader').peer
-  sendGameDataToPeer(leaderPeer, { type: 'submitVoteInsider', player: votePlayer })
-}
-
-export function submitResultGame() {
-  const highestVotePlayer = players.value.reduce(
-    (acc, cur) => {
-      if (acc === null || !acc.votingPlayers)
-        return cur
-
-      if (!cur.votingPlayers)
-        return acc
-
-      return cur.votingPlayers.length > acc.votingPlayers.length ? cur : acc
-    }, null)
-
-  if (highestVotePlayer.role === 'insider') {
-    winnerSide.value = 'villager'
-    broadcastVillagers({
-      type: 'gameResultPhase',
-      gameResult: 'win',
-      players: players.value,
-    })
-    sendGameDataToPeer(insiderPlayer.value.peer, { type: 'gameResultPhase', gameResult: 'lose' })
-  }
-  else {
-    winnerSide.value = 'insider'
-    sendGameDataToPeer(insiderPlayer.value.peer, { type: 'gameResultPhase', gameResult: 'win' })
-    broadcastVillagers({
-      type: 'gameResultPhase',
-      gameResult: 'lose',
-    })
-  }
-
-  broadcastPeers({ type: 'changePlayers', players: players.value })
-
-  gameStatus.value = 'gameResultPhase'
 }
 
 export function quitGame() {
@@ -206,10 +164,6 @@ function resetGameData() {
   gameAnswer.value = ''
   gameStatus.value = null
   gameResult.value = undefined
-}
-
-function broadcastVillagers(data: GameSendingData) {
-  villagerPlayers.value.forEach(player => sendGameDataToPeer(player.peer, data))
 }
 
 export function broadcastPeers(data: GameSendingData, excludePeers: string[] = []) {

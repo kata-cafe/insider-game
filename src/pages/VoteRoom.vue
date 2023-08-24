@@ -3,23 +3,20 @@ import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import BaseButton from '../components/BaseButton.vue'
 import BasePlayerListItem from '../components/BasePlayerListItem.vue'
-import { gameStatus, isMyRoleLeader, submitResultGame, submitVotePlayer, votingPlayers } from '../store'
-import type { GamePlayer } from '../model'
+import { broadcastPeers, gameStatus, insiderPlayer, isMyRoleLeader, players, sendGameDataToPeer, votingPlayers, winnerSide } from '../store'
+import type { GamePlayer, GameSendingData } from '../model'
 
 const router = useRouter()
-
-const allPlayersVoted = computed(() => votingPlayers.value.every(player => player.isVoted))
 
 const selectedPlayer = ref<GamePlayer>()
 
 const isSubmittedVotePlayer = ref(false)
 
-const disabledSubmit = computed(() => !selectedPlayer.value || isSubmittedVotePlayer.value)
+const villagerPlayers = computed(() => players.value.filter(player => player.role === 'villager'))
 
-function handleSubmitVotePlayer() {
-  isSubmittedVotePlayer.value = true
-  submitVotePlayer(selectedPlayer.value)
-}
+const allPlayersVoted = computed(() => votingPlayers.value.every(player => player.isVoted))
+
+const disabledSubmit = computed(() => !selectedPlayer.value || isSubmittedVotePlayer.value)
 
 if (isMyRoleLeader.value) {
   watch(allPlayersVoted, () => {
@@ -31,6 +28,55 @@ watch(gameStatus, () => {
   if (gameStatus.value === 'gameResultPhase')
     router.push({ name: 'game-result' })
 })
+
+function handleSubmitVotePlayer() {
+  isSubmittedVotePlayer.value = true
+  submitVotePlayer(selectedPlayer.value)
+}
+
+function submitVotePlayer(votePlayer: GamePlayer) {
+  const leaderPeer = players.value.find(player => player.role === 'leader').peer
+  sendGameDataToPeer(leaderPeer, { type: 'submitVoteInsider', player: votePlayer })
+}
+
+function submitResultGame() {
+  const highestVotePlayer = players.value.reduce(
+    (acc, cur) => {
+      if (acc === null || !acc.votingPlayers)
+        return cur
+
+      if (!cur.votingPlayers)
+        return acc
+
+      return cur.votingPlayers.length > acc.votingPlayers.length ? cur : acc
+    }, null)
+
+  if (highestVotePlayer.role === 'insider') {
+    winnerSide.value = 'villager'
+    broadcastVillagers({
+      type: 'gameResultPhase',
+      gameResult: 'win',
+      players: players.value,
+    })
+    sendGameDataToPeer(insiderPlayer.value.peer, { type: 'gameResultPhase', gameResult: 'lose' })
+  }
+  else {
+    winnerSide.value = 'insider'
+    sendGameDataToPeer(insiderPlayer.value.peer, { type: 'gameResultPhase', gameResult: 'win' })
+    broadcastVillagers({
+      type: 'gameResultPhase',
+      gameResult: 'lose',
+    })
+  }
+
+  broadcastPeers({ type: 'changePlayers', players: players.value })
+
+  gameStatus.value = 'gameResultPhase'
+}
+
+function broadcastVillagers(data: GameSendingData) {
+  villagerPlayers.value.forEach(player => sendGameDataToPeer(player.peer, data))
+}
 </script>
 
 <template>
