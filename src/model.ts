@@ -2,6 +2,7 @@ export interface GameSendingData {
   type:
   | 'changePlayers'
   | 'changeVotingPlayers'
+  | 'changeSecondVotingPlayers'
   | 'playerReady'
   | 'newJoin'
   | 'startGame'

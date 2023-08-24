@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import BaseButton from '../components/BaseButton.vue'
 import BasePlayerListItem from '../components/BasePlayerListItem.vue'
-import { broadcastPeers, gameStatus, insiderPlayer, isMyRoleLeader, players, sendGameDataToPeer, votingPlayers, winnerSide } from '../store'
+import { broadcastPeers, gameStatus, insiderPlayer, isMyRoleLeader, players, secondVotingPlayers, sendGameDataToPeer, votingPlayers, winnerSide } from '../store'
 import type { GamePlayer, GameSendingData } from '../model'
 
 const router = useRouter()
@@ -14,14 +14,44 @@ const isSubmittedVotePlayer = ref(false)
 
 const villagerPlayers = computed(() => players.value.filter(player => player.role === 'villager'))
 
-const allPlayersVoted = computed(() => votingPlayers.value.every(player => player.isVoted))
+const currentVotingPlayers = computed(
+  () => secondVotingPlayers.value.length > 0
+    ? secondVotingPlayers.value
+    : votingPlayers.value,
+)
+
+const allPlayersVoted = computed(() => currentVotingPlayers.value.every(player => player.isVoted))
 
 const disabledSubmit = computed(() => !selectedPlayer.value || isSubmittedVotePlayer.value)
 
 if (isMyRoleLeader.value) {
   watch(allPlayersVoted, () => {
-    submitResultGame()
+    const highestVotePlayers = getHighestVotePlayers()
+
+    if (highestVotePlayers.length === 1) {
+      submitResultGame()
+    }
+    else {
+      const mapResetVote = highestVotePlayers.map(player => ({ ...player, isVoted: false }))
+      secondVotingPlayers.value = mapResetVote
+      broadcastPeers({ type: 'changeSecondVotingPlayers', players: mapResetVote })
+    }
   })
+}
+
+function getHighestVotePlayers(): GamePlayer[] {
+  let highestVoteCount = 0
+
+  const votedPlayers = players.value.filter(
+    player => player.votingPlayers && player.votingPlayers.length > 0,
+  )
+
+  for (const player of votedPlayers) {
+    if (player.votingPlayers.length > highestVoteCount)
+      highestVoteCount = player.votingPlayers.length
+  }
+
+  return votedPlayers.filter(player => player.votingPlayers.length === highestVoteCount)
 }
 
 watch(gameStatus, () => {
@@ -80,7 +110,6 @@ function broadcastVillagers(data: GameSendingData) {
 </script>
 
 <template>
-  {{ allPlayersVoted }}
   <div class="text-4xl font-bold">
     Vote
   </div>
@@ -89,8 +118,12 @@ function broadcastVillagers(data: GameSendingData) {
     Who is the <span class="font-bold text-primary">INSIDER</span>
   </div>
 
+  <div v-if="secondVotingPlayers.length" class="text-4xl">
+    Vote again for: <span class="font-bold">{{ secondVotingPlayers.join(', ') }}</span>
+  </div>
+
   <BasePlayerListItem
-    v-for="player of votingPlayers"
+    v-for="player of currentVotingPlayers"
     :key="player.peer"
     class="box-border border border-transparent px-4 py-2"
     :class="{

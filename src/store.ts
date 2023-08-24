@@ -12,6 +12,8 @@ export const players = ref<GamePlayer[]>([])
 
 export const votingPlayers = ref<GamePlayer[]>([])
 
+export const secondVotingPlayers = ref<GamePlayer[]>([])
+
 export const roomLeaderConn = ref<DataConnection>()
 
 export const gameStatus = ref<GameStatus>(null)
@@ -97,6 +99,9 @@ myPeer.on('connection', (conn) => {
     }
     else if (peerData.type === 'changeVotingPlayers') {
       votingPlayers.value = [...peerData.players]
+    }
+    else if (peerData.type === 'changeSecondVotingPlayers') {
+      secondVotingPlayers.value = [...peerData.players]
     }
     else if (peerData.type === 'startGame') {
       gameStatus.value = 'gameStart'
