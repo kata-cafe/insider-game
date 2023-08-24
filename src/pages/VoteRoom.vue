@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import BaseButton from '../components/BaseButton.vue'
 import BasePlayerListItem from '../components/BasePlayerListItem.vue'
-import { broadcastPeers, gameStatus, insiderPlayer, isMyRoleLeader, players, secondVotingPlayers, sendGameDataToPeer, votingPlayers, winnerSide } from '../store'
+import { broadcastPeers, gameStatus, insiderPlayer, isMyRoleLeader, myPeer, players, secondVotingPlayers, sendGameDataToPeer, votingPlayers, winnerSide } from '../store'
 import type { GamePlayer, GameSendingData } from '../model'
 
 const router = useRouter()
@@ -20,6 +20,10 @@ const currentVotingPlayers = computed(
     : votingPlayers.value,
 )
 
+const previewCurrentVotingPlayers = computed(
+  () => currentVotingPlayers.value.filter(player => player.peer !== myPeer.id),
+)
+
 const allPlayersVoted = computed(() => currentVotingPlayers.value.every(player => player.isVoted))
 
 const disabledSubmit = computed(() => !selectedPlayer.value || isSubmittedVotePlayer.value)
@@ -34,6 +38,7 @@ if (isMyRoleLeader.value) {
     else {
       const mapResetVote = highestVotePlayers.map(player => ({ ...player, isVoted: false }))
       secondVotingPlayers.value = mapResetVote
+      isSubmittedVotePlayer.value = false
       broadcastPeers({ type: 'changeSecondVotingPlayers', players: mapResetVote })
     }
   })
@@ -107,6 +112,13 @@ function submitResultGame() {
 function broadcastVillagers(data: GameSendingData) {
   villagerPlayers.value.forEach(player => sendGameDataToPeer(player.peer, data))
 }
+
+function votingPlayerActive(player: GamePlayer) {
+  if (isMyRoleLeader)
+    return player.isVoted
+
+  return selectedPlayer.value && selectedPlayer.value.peer === player.peer
+}
 </script>
 
 <template>
@@ -119,16 +131,15 @@ function broadcastVillagers(data: GameSendingData) {
   </div>
 
   <div v-if="secondVotingPlayers.length" class="text-4xl">
-    Vote again for: <span class="font-bold">{{ secondVotingPlayers.join(', ') }}</span>
+    Vote again for: <span class="font-bold">{{ secondVotingPlayers.map(player => player.playerName).join(', ') }}</span>
   </div>
 
   <BasePlayerListItem
-    v-for="player of currentVotingPlayers"
+    v-for="player of previewCurrentVotingPlayers"
     :key="player.peer"
     class="box-border border border-transparent px-4 py-2"
     :class="{
-      'rounded-xl !border-primary': selectedPlayer
-        && selectedPlayer.peer === player.peer,
+      'rounded-xl !border-primary': votingPlayerActive(player),
     }"
     :player="player"
   >
