@@ -176,6 +176,8 @@ function resetGameData() {
   gameAnswer.value = ''
   gameStatus.value = null
   gameResult.value = undefined
+  isSubmittedVotePlayer.value = false
+  selectedPlayer.value = null
 }
 
 export function broadcastPeers(data: GameSendingData, excludePeers: string[] = []) {
