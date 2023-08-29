@@ -1,18 +1,16 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, watch, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 import BaseButton from '../components/BaseButton.vue'
 import BasePlayerListItem from '../components/BasePlayerListItem.vue'
-import { broadcastPeers, gameStatus, insiderPlayer, isMyRoleLeader, myPeer, players, secondVotingPlayers, sendGameDataToPeer, votingPlayers, winnerSide } from '../store'
+import { broadcastPeers, gameStatus, insiderPlayer, isMyRoleLeader, isSubmittedVotePlayer, myPeer, players, secondVotingPlayers, selectedPlayer, sendGameDataToPeer, setSelectedPlayer, votingPlayers, winnerSide } from '../store'
 import type { GamePlayer, GameSendingData } from '../model'
 
 const router = useRouter()
 
-const selectedPlayer = ref<GamePlayer>()
-
-const isSubmittedVotePlayer = ref(false)
-
-const villagerPlayers = computed(() => players.value.filter(player => player.role === 'villager'))
+const villagerPlayers = computed(
+  () => players.value.filter(player => player.role === 'villager'),
+)
 
 const currentVotingPlayers = computed(
   () => secondVotingPlayers.value.length > 0
@@ -24,22 +22,40 @@ const previewCurrentVotingPlayers = computed(
   () => currentVotingPlayers.value.filter(player => player.peer !== myPeer.id),
 )
 
-const allPlayersVoted = computed(() => currentVotingPlayers.value.every(player => player.isVoted))
+const allPlayersVoted = computed(
+  () => players.value.every(player => player.role === 'leader' || player.isVoted),
+)
 
 const disabledSubmit = computed(() => !selectedPlayer.value || isSubmittedVotePlayer.value)
 
 if (isMyRoleLeader.value) {
-  watch(allPlayersVoted, () => {
+  watchEffect(() => {
+    if (!allPlayersVoted.value)
+      return
+
     const highestVotePlayers = getHighestVotePlayers()
 
     if (highestVotePlayers.length === 1) {
       submitResultGame()
     }
     else {
-      const mapResetVote = highestVotePlayers.map(player => ({ ...player, isVoted: false }))
+      const mapResetVote = highestVotePlayers.map(player => ({
+        ...player,
+        isVoted: false,
+        votingPlayers: [],
+      }))
+
+      players.value = players.value.map(player => ({
+        ...player,
+        isVoted: false,
+        votingPlayers: [],
+      }))
+
       secondVotingPlayers.value = mapResetVote
       isSubmittedVotePlayer.value = false
+      setSelectedPlayer(null)
       broadcastPeers({ type: 'changeSecondVotingPlayers', players: mapResetVote })
+      broadcastPeers({ type: 'changePlayers', players: players.value })
     }
   })
 }
@@ -93,18 +109,23 @@ function submitResultGame() {
       gameResult: 'win',
       players: players.value,
     })
-    sendGameDataToPeer(insiderPlayer.value.peer, { type: 'gameResultPhase', gameResult: 'lose' })
+    sendGameDataToPeer(
+      insiderPlayer.value.peer,
+      { type: 'gameResultPhase', gameResult: 'lose', players: players.value },
+    )
   }
   else {
     winnerSide.value = 'insider'
-    sendGameDataToPeer(insiderPlayer.value.peer, { type: 'gameResultPhase', gameResult: 'win' })
+    sendGameDataToPeer(
+      insiderPlayer.value.peer,
+      { type: 'gameResultPhase', gameResult: 'win', players: players.value },
+    )
     broadcastVillagers({
       type: 'gameResultPhase',
       gameResult: 'lose',
+      players: players.value,
     })
   }
-
-  broadcastPeers({ type: 'changePlayers', players: players.value })
 
   gameStatus.value = 'gameResultPhase'
 }
@@ -114,7 +135,7 @@ function broadcastVillagers(data: GameSendingData) {
 }
 
 function votingPlayerActive(player: GamePlayer) {
-  if (isMyRoleLeader)
+  if (isMyRoleLeader.value)
     return player.isVoted
 
   return selectedPlayer.value && selectedPlayer.value.peer === player.peer
@@ -144,7 +165,7 @@ function votingPlayerActive(player: GamePlayer) {
     :player="player"
   >
     <template #append>
-      <BaseButton v-if="!isMyRoleLeader" class="btn-sm" :disabled="isSubmittedVotePlayer" @click="selectedPlayer = player">
+      <BaseButton v-if="!isMyRoleLeader" class="btn-sm" :disabled="isSubmittedVotePlayer" @click="setSelectedPlayer(player)">
         Vote
       </BaseButton>
     </template>

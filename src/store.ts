@@ -12,6 +12,8 @@ export const players = ref<GamePlayer[]>([])
 
 export const votingPlayers = ref<GamePlayer[]>([])
 
+export const selectedPlayer = ref<GamePlayer | null>(null)
+
 export const secondVotingPlayers = ref<GamePlayer[]>([])
 
 export const roomLeaderConn = ref<DataConnection>()
@@ -21,6 +23,8 @@ export const gameStatus = ref<GameStatus>(null)
 export const gameAnswer = ref('')
 
 export const gameResult = ref<GameResult>()
+
+export const isSubmittedVotePlayer = ref(false)
 
 export const myPeer = new Peer(gameId.value)
 
@@ -101,6 +105,8 @@ myPeer.on('connection', (conn) => {
       votingPlayers.value = [...peerData.players]
     }
     else if (peerData.type === 'changeSecondVotingPlayers') {
+      isSubmittedVotePlayer.value = false
+      selectedPlayer.value = null
       secondVotingPlayers.value = [...peerData.players]
     }
     else if (peerData.type === 'startGame') {
@@ -142,6 +148,7 @@ myPeer.on('connection', (conn) => {
     else if (peerData.type === 'gameResultPhase') {
       gameStatus.value = 'gameResultPhase'
       gameResult.value = peerData.gameResult
+      players.value = [...peerData.players]
     }
   })
 
@@ -184,12 +191,16 @@ export function sendDataToRoomLeader(data: GameSendingData) {
 export function sendGameDataToPeer(peer: DataConnection['peer'], data: GameSendingData) {
   const newPeer = myPeer.connect(peer)
 
-  newPeer.on('open', () => {
+  newPeer.once('open', () => {
     newPeer.send({
       ...data,
       playerName: data.playerName || playerName.value,
     })
   })
+}
+
+export function setSelectedPlayer(player: GamePlayer | null) {
+  selectedPlayer.value = player
 }
 
 export function findPlayerIndexByPeer(players: GamePlayer[], peer: string) {
