@@ -7,6 +7,9 @@ const config = {
     main: './src/main.js',
   },
   builtins: {
+    copy: {
+      patterns: ['./public'],
+    },
     html: [
       {
         template: './index.html',
