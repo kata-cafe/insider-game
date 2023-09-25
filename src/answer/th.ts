@@ -69,4 +69,5 @@ export const thAnswers = [
   '7-11 (ร้านสะดวกซื้อ)',
   'มาม่า',
   'Bitcoin',
+  'Ethereum',
 ]
